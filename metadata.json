@@ -1,0 +1,5 @@
+{
+  "name": "Canil - Meus Filhos de 4 Patas",
+  "description": "A comprehensive kennel management application. It features a public catalog for showcasing dogs and an exclusive admin area for client management, message composition, and scheduling communications.",
+  "requestFramePermissions": []
+}
