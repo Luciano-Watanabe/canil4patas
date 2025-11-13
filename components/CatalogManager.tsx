@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Dog } from '../types';
-import { INITIAL_DOG_DATA } from '../constants';
+import { getDogs, addDog, updateDog, deleteDog } from '../services/firebaseService';
 import { PlusIcon } from './icons/PlusIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { EditIcon } from './icons/EditIcon';
@@ -15,15 +14,28 @@ const emptyDog: Omit<Dog, 'id'> = {
 };
 
 const CatalogManager: React.FC = () => {
-  const [dogs, setDogs] = useLocalStorage<Dog[]>('dogs', INITIAL_DOG_DATA);
-  const [formData, setFormData] = useState<Omit<Dog, 'id'> & { id?: number }>(emptyDog);
-  const [isEditing, setIsEditing] = useState<number | null>(null);
+  const [dogs, setDogs] = useState<Dog[]>([]);
+  const [formData, setFormData] = useState<Omit<Dog, 'id'>>(emptyDog);
+  const [isEditing, setIsEditing] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchDogs = async () => {
+    setLoading(true);
+    const dogsFromDb = await getDogs();
+    setDogs(dogsFromDb);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchDogs();
+  }, []);
 
   useEffect(() => {
     if (isEditing !== null) {
       const dogToEdit = dogs.find(d => d.id === isEditing);
       if (dogToEdit) {
-        setFormData(dogToEdit);
+        const { id, ...editableData } = dogToEdit;
+        setFormData(editableData);
       }
     } else {
       setFormData(emptyDog);
@@ -35,22 +47,19 @@ const CatalogManager: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditing !== null) {
-      setDogs(dogs.map(dog => (dog.id === isEditing ? { ...formData, id: isEditing } as Dog : dog)));
+      await updateDog(isEditing, formData);
     } else {
-      const newDog: Dog = {
-        ...formData,
-        id: dogs.length > 0 ? Math.max(...dogs.map(d => d.id)) + 1 : 1,
-      };
-      setDogs([...dogs, newDog]);
+      await addDog(formData);
     }
+    await fetchDogs();
     setIsEditing(null);
     setFormData(emptyDog);
   };
 
-  const handleEdit = (id: number) => {
+  const handleEdit = (id: string) => {
     setIsEditing(id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -60,9 +69,10 @@ const CatalogManager: React.FC = () => {
     setFormData(emptyDog);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este cão do catálogo?')) {
-      setDogs(dogs.filter(dog => dog.id !== id));
+      await deleteDog(id);
+      await fetchDogs();
       if (isEditing === id) {
         handleCancelEdit();
       }
@@ -167,7 +177,9 @@ const CatalogManager: React.FC = () => {
       <div className="lg:col-span-2">
         <h3 className="text-xl font-bold text-brand-dark mb-4">Catálogo Atual ({dogs.length})</h3>
         <div className="bg-gray-50 p-4 rounded-lg max-h-[42rem] overflow-y-auto">
-          {dogs.length > 0 ? (
+          {loading ? (
+             <p className="text-center text-gray-500 py-8">Carregando catálogo...</p>
+          ) : dogs.length > 0 ? (
             <ul className="space-y-3">
               {dogs.map(dog => (
                 <li key={dog.id} className="bg-white p-4 rounded-md shadow-sm flex items-center gap-4">

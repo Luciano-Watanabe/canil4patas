@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import { Dog } from '../types';
-import { WHATSAPP_NUMBER } from '../constants';
-import { useLocalStorage } from '../hooks/useLocalStorage';
 
 interface InterestModalProps {
   dog: Dog;
   onClose: () => void;
+  whatsappNumber: string;
 }
 
-const InterestModal: React.FC<InterestModalProps> = ({ dog, onClose }) => {
+const InterestModal: React.FC<InterestModalProps> = ({ dog, onClose, whatsappNumber }) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [whatsappNumber] = useLocalStorage<string>('whatsappNumber', WHATSAPP_NUMBER);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

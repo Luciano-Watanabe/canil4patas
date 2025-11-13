@@ -1,16 +1,35 @@
-import React, { useState } from 'react';
-import { INITIAL_DOG_DATA, WHATSAPP_NUMBER } from '../constants';
+import React, { useState, useEffect } from 'react';
 import DogCard from './DogCard';
 import { Dog } from '../types';
 import InterestModal from './InterestModal';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { getDogs, getSettings } from '../services/firebaseService';
 
 const PublicCatalog: React.FC = () => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
-  const [whatsappNumber] = useLocalStorage<string>('whatsappNumber', WHATSAPP_NUMBER);
-  const [dogs] = useLocalStorage<Dog[]>('dogs', INITIAL_DOG_DATA);
+  const [whatsappNumber, setWhatsappNumber] = useState<string>('');
+  const [dogs, setDogs] = useState<Dog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [dogsData, settingsData] = await Promise.all([getDogs(), getSettings()]);
+        setDogs(dogsData);
+        setWhatsappNumber(settingsData.whatsappNumber);
+        setError(null);
+      } catch (err) {
+        console.error("Erro ao buscar dados:", err);
+        setError("Não foi possível carregar o catálogo. Tente novamente mais tarde.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleInterestClick = (dog: Dog) => {
     setSelectedDog(dog);
@@ -22,7 +41,7 @@ const PublicCatalog: React.FC = () => {
 
   const handleGeneralInquirySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phone) {
+    if (!name || !phone || !whatsappNumber) {
         alert('Por favor, preencha todos os campos.');
         return;
     }
@@ -32,6 +51,22 @@ const PublicCatalog: React.FC = () => {
     setName('');
     setPhone('');
   };
+
+  if (loading) {
+    return (
+      <div className="text-center p-10">
+        <p className="text-brand-primary">Carregando nosso filhotes...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-10 bg-red-100 text-red-700 rounded-lg">
+        <p>{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-12">
@@ -83,7 +118,7 @@ const PublicCatalog: React.FC = () => {
         </form>
       </section>
       
-      {selectedDog && <InterestModal dog={selectedDog} onClose={handleCloseModal} />}
+      {selectedDog && <InterestModal dog={selectedDog} onClose={handleCloseModal} whatsappNumber={whatsappNumber} />}
     </div>
   );
 };

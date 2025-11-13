@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ADMIN_PASSWORD } from '../constants';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../services/firebase';
 import { DogPawIcon } from './icons/DogPawIcon';
 
 interface AdminLoginProps {
@@ -8,15 +9,23 @@ interface AdminLoginProps {
 }
 
 const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
+    setLoading(true);
+    setError('');
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       onLoginSuccess();
-    } else {
-      setError('Senha incorreta. Tente novamente.');
+    } catch (error) {
+      console.error("Login failed:", error);
+      setError('E-mail ou senha inválidos. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -30,6 +39,22 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
           </h2>
         </div>
         <form className="space-y-6" onSubmit={handleLogin}>
+           <div>
+            <label htmlFor="email-address" className="sr-only">
+              Email
+            </label>
+            <input
+              id="email-address"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-brand-secondary focus:border-brand-secondary sm:text-sm"
+              placeholder="Email"
+            />
+          </div>
           <div>
             <label htmlFor="password-admin" className="sr-only">
               Senha
@@ -42,7 +67,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-brand-secondary focus:border-brand-secondary focus:z-10 sm:text-sm"
+              className="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-brand-secondary focus:border-brand-secondary sm:text-sm"
               placeholder="Senha"
             />
           </div>
@@ -52,9 +77,10 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-secondary transition-colors"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-brand-primary hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-secondary transition-colors disabled:opacity-50"
             >
-              Entrar
+              {loading ? 'Entrando...' : 'Entrar'}
             </button>
           </div>
         </form>

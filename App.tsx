@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './services/firebase';
 import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
 import PublicCatalog from './components/PublicCatalog';
@@ -7,12 +9,26 @@ import { DogPawIcon } from './components/icons/DogPawIcon';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
   const [adminView, setAdminView] = useState<'dashboard' | 'catalog'>('dashboard');
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setAdminView('dashboard');
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // O onAuthStateChanged vai atualizar isAuthenticated para false automaticamente
+      setAdminView('dashboard');
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
   };
 
   const Footer = () => (
@@ -23,6 +39,14 @@ export default function App() {
         </div>
       </footer>
   );
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-brand-light">
+        <DogPawIcon className="w-16 h-16 text-brand-primary animate-pulse" />
+      </div>
+    );
+  }
 
   if (isAuthenticated) {
     return (
@@ -45,7 +69,7 @@ export default function App() {
     return (
       <AdminLogin
         onLoginSuccess={() => {
-          setIsAuthenticated(true);
+          // O onAuthStateChanged cuidará da atualização do estado
           setShowLogin(false);
         }}
         onBack={() => setShowLogin(false)}

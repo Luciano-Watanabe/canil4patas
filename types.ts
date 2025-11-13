@@ -1,6 +1,5 @@
-
 export interface Dog {
-  id: number;
+  id: string;
   name: string;
   breed: string;
   age: string;
@@ -19,4 +18,8 @@ export interface ScheduledMessage {
   clientIds: string[];
   message: string;
   sendAt: string;
+}
+
+export interface Settings {
+  whatsappNumber: string;
 }

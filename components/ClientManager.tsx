@@ -1,31 +1,43 @@
-
-import React, { useState } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import React, { useState, useEffect } from 'react';
 import { Client } from '../types';
+import { getClients, addClient, deleteClient } from '../services/firebaseService';
 import { PlusIcon } from './icons/PlusIcon';
 import { TrashIcon } from './icons/TrashIcon';
 
 const ClientManager: React.FC = () => {
-  const [clients, setClients] = useLocalStorage<Client[]>('clients', []);
+  const [clients, setClients] = useState<Client[]>([]);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  const handleAddClient = (e: React.FormEvent) => {
+  const fetchClients = async () => {
+    setLoading(true);
+    const clientsFromDb = await getClients();
+    setClients(clientsFromDb);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  const handleAddClient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name && phone) {
-      const newClient: Client = { id: new Date().toISOString(), name, phone };
-      setClients([...clients, newClient]);
+      await addClient({ name, phone });
       setName('');
       setPhone('');
+      await fetchClients();
     }
   };
 
-  const handleDeleteClient = (id: string) => {
+  const handleDeleteClient = async (id: string) => {
     if(window.confirm('Tem certeza que deseja excluir este cliente?')) {
-        setClients(clients.filter(client => client.id !== id));
+      await deleteClient(id);
+      await fetchClients();
     }
   };
-
+  
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-1">
@@ -67,7 +79,9 @@ const ClientManager: React.FC = () => {
       <div className="lg:col-span-2">
         <h3 className="text-xl font-bold text-brand-dark mb-4">Lista de Clientes ({clients.length})</h3>
         <div className="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
-          {clients.length > 0 ? (
+          {loading ? (
+            <p className="text-center text-gray-500 py-8">Carregando clientes...</p>
+          ) : clients.length > 0 ? (
             <ul className="space-y-3">
               {clients.map(client => (
                 <li key={client.id} className="bg-white p-4 rounded-md shadow-sm flex justify-between items-center">

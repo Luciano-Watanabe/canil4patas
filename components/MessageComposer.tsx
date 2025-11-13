@@ -1,17 +1,26 @@
-
-import React, { useState } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import React, { useState, useEffect } from 'react';
 import { Client } from '../types';
+import { getClients } from '../services/firebaseService';
 import { generateMessageIdea } from '../services/geminiService';
-import { WHATSAPP_NUMBER } from '../constants';
 import { SparklesIcon } from './icons/SparklesIcon';
 
 const MessageComposer: React.FC = () => {
-  const [clients] = useLocalStorage<Client[]>('clients', []);
+  const [clients, setClients] = useState<Client[]>([]);
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [message, setMessage] = useState('');
   const [isLoadingIdea, setIsLoadingIdea] = useState(false);
   const [sendStatus, setSendStatus] = useState<string | null>(null);
+  const [loadingClients, setLoadingClients] = useState(true);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+        setLoadingClients(true);
+        const clientsFromDb = await getClients();
+        setClients(clientsFromDb);
+        setLoadingClients(false);
+    };
+    fetchClients();
+  }, []);
 
   const handleGenerateIdea = async () => {
     setIsLoadingIdea(true);
@@ -27,8 +36,6 @@ const MessageComposer: React.FC = () => {
     }
     const messageText = encodeURIComponent(message);
     
-    // In a real app, this would be a backend call.
-    // Here, we simulate by opening a WhatsApp link for the first selected client.
     const firstClient = clients.find(c => c.id === selectedClients[0]);
     if (firstClient) {
       const whatsappUrl = `https://wa.me/${firstClient.phone.replace(/\D/g, '')}?text=${messageText}`;
@@ -64,7 +71,9 @@ const MessageComposer: React.FC = () => {
       <div className="lg:col-span-1">
         <h3 className="text-xl font-bold text-brand-dark mb-4">Selecionar Clientes</h3>
         <div className="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
-          {clients.length > 0 ? (
+          {loadingClients ? (
+             <p className="text-center text-gray-500 py-8">Carregando clientes...</p>
+          ) : clients.length > 0 ? (
             <div className="space-y-2">
               <div className="flex items-center border-b pb-2 mb-2">
                 <input

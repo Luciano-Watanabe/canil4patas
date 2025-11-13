@@ -1,19 +1,32 @@
-import React, { useState } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
-import { WHATSAPP_NUMBER } from '../constants';
+import React, { useState, useEffect } from 'react';
+import { getSettings, updateSettings } from '../services/firebaseService';
 import { CogIcon } from './icons/CogIcon';
 
 const SettingsManager: React.FC = () => {
-  const [whatsappNumber, setWhatsappNumber] = useLocalStorage<string>('whatsappNumber', WHATSAPP_NUMBER);
-  const [tempNumber, setTempNumber] = useState(whatsappNumber);
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchSettings = async () => {
+      setLoading(true);
+      const settings = await getSettings();
+      setWhatsappNumber(settings.whatsappNumber);
+      setLoading(false);
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setWhatsappNumber(tempNumber);
+    await updateSettings({ whatsappNumber });
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
+
+  if (loading) {
+    return <p>Carregando configurações...</p>;
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -30,8 +43,8 @@ const SettingsManager: React.FC = () => {
                 <input
                     type="tel"
                     id="whatsapp-number"
-                    value={tempNumber}
-                    onChange={(e) => setTempNumber(e.target.value)}
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value)}
                     required
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-secondary focus:border-brand-secondary"
                     placeholder="Ex: 5511912345678"

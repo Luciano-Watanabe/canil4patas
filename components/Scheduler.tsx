@@ -1,41 +1,55 @@
-import React, { useState } from 'react';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import React, { useState, useEffect } from 'react';
 import { Client, ScheduledMessage } from '../types';
+import { getClients, getSchedules, addSchedule, deleteSchedule } from '../services/firebaseService';
 import { PlusIcon } from './icons/PlusIcon';
 import { TrashIcon } from './icons/TrashIcon';
 
 const Scheduler: React.FC = () => {
-  const [clients] = useLocalStorage<Client[]>('clients', []);
-  const [schedules, setSchedules] = useLocalStorage<ScheduledMessage[]>('schedules', []);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [schedules, setSchedules] = useState<ScheduledMessage[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [message, setMessage] = useState('');
   const [sendAt, setSendAt] = useState('');
 
-  const handleAddSchedule = (e: React.FormEvent) => {
+  const fetchData = async () => {
+    setLoading(true);
+    const [clientsData, schedulesData] = await Promise.all([getClients(), getSchedules()]);
+    setClients(clientsData);
+    setSchedules(schedulesData);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleAddSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedClients.length > 0 && message && sendAt) {
-      const newSchedule: ScheduledMessage = {
-        id: new Date().toISOString(),
+      const newSchedule: Omit<ScheduledMessage, 'id'> = {
         clientIds: selectedClients,
         message,
         sendAt,
       };
-      setSchedules([...schedules, newSchedule]);
+      await addSchedule(newSchedule);
       setSelectedClients([]);
       setMessage('');
       setSendAt('');
+      await fetchData();
     }
   };
 
-  const handleDeleteSchedule = (id: string) => {
+  const handleDeleteSchedule = async (id: string) => {
     if(window.confirm('Tem certeza que deseja excluir este agendamento?')) {
-        setSchedules(schedules.filter(s => s.id !== id));
+        await deleteSchedule(id);
+        await fetchData();
     }
   };
 
   const getClientNames = (clientIds: string[]) => {
-    return clientIds.map(id => clients.find(c => c.id)?.name).filter(Boolean).join(', ');
+    return clientIds.map(id => clients.find(c => c.id === id)?.name).filter(Boolean).join(', ');
   };
 
   return (
@@ -54,7 +68,6 @@ const Scheduler: React.FC = () => {
               <select
                 multiple
                 value={selectedClients}
-                // Fix: Explicitly type the 'option' parameter in the map function to resolve the type inference issue.
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedClients(Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))}
                 className="mt-1 block w-full h-32 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-brand-secondary focus:border-brand-secondary"
               >
@@ -97,7 +110,9 @@ const Scheduler: React.FC = () => {
         <div className="lg:col-span-2">
           <h3 className="text-xl font-bold text-brand-dark mb-4">Mensagens Agendadas ({schedules.length})</h3>
           <div className="bg-gray-50 p-4 rounded-lg max-h-[28rem] overflow-y-auto">
-            {schedules.length > 0 ? (
+             {loading ? (
+                <p className="text-center text-gray-500 py-8">Carregando agendamentos...</p>
+             ) : schedules.length > 0 ? (
               <ul className="space-y-3">
                 {schedules.map(schedule => (
                   <li key={schedule.id} className="bg-white p-4 rounded-md shadow-sm">
