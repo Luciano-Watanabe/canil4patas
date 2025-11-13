@@ -4,18 +4,22 @@ import ClientManager from './ClientManager';
 import MessageComposer from './MessageComposer';
 import Scheduler from './Scheduler';
 import SettingsManager from './SettingsManager';
+import CatalogManager from './CatalogManager';
 import { UsersIcon } from './icons/UsersIcon';
 import { MessageIcon } from './icons/MessageIcon';
 import { ClockIcon } from './icons/ClockIcon';
 import { CogIcon } from './icons/CogIcon';
+import { ListIcon } from './icons/ListIcon';
 
-type AdminTab = 'clients' | 'messages' | 'scheduler' | 'settings';
+type AdminTab = 'catalog' | 'clients' | 'messages' | 'scheduler' | 'settings';
 
 const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<AdminTab>('clients');
+  const [activeTab, setActiveTab] = useState<AdminTab>('catalog');
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'catalog':
+        return <CatalogManager />;
       case 'clients':
         return <ClientManager />;
       case 'messages':
@@ -50,6 +54,7 @@ const AdminDashboard: React.FC = () => {
     <div className="max-w-7xl mx-auto">
       <h2 className="text-3xl font-bold text-brand-dark mb-6">Painel do Administrador</h2>
       <div className="flex flex-wrap border-b border-gray-200">
+        <TabButton tab="catalog" label="Gerenciar Catálogo" icon={ListIcon} />
         <TabButton tab="clients" label="Gerenciar Clientes" icon={UsersIcon} />
         <TabButton tab="messages" label="Enviar Mensagens" icon={MessageIcon} />
         <TabButton tab="scheduler" label="Agendador" icon={ClockIcon} />

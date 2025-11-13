@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DOG_DATA, WHATSAPP_NUMBER } from '../constants';
+import { INITIAL_DOG_DATA, WHATSAPP_NUMBER } from '../constants';
 import DogCard from './DogCard';
 import { Dog } from '../types';
 import InterestModal from './InterestModal';
@@ -10,6 +10,7 @@ const PublicCatalog: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [selectedDog, setSelectedDog] = useState<Dog | null>(null);
   const [whatsappNumber] = useLocalStorage<string>('whatsappNumber', WHATSAPP_NUMBER);
+  const [dogs] = useLocalStorage<Dog[]>('dogs', INITIAL_DOG_DATA);
 
   const handleInterestClick = (dog: Dog) => {
     setSelectedDog(dog);
@@ -37,7 +38,7 @@ const PublicCatalog: React.FC = () => {
       <section>
         <h2 className="text-3xl font-bold text-center text-brand-dark mb-8">Nossos Filhos de 4 Patas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {DOG_DATA.map((dog) => (
+          {dogs.map((dog) => (
             <DogCard key={dog.id} dog={dog} onInterestClick={handleInterestClick} />
           ))}
         </div>

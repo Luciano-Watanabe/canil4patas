@@ -28,9 +28,6 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onBack }) => {
           <h2 className="text-3xl font-extrabold text-center text-brand-dark">
             Área Restrita do Admin
           </h2>
-          <p className="text-center text-gray-600">
-            A senha padrão é 'admin'.
-          </p>
         </div>
         <form className="space-y-6" onSubmit={handleLogin}>
           <div>

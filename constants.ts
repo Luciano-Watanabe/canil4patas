@@ -1,10 +1,10 @@
 import { Dog } from './types';
 
-export const ADMIN_PASSWORD = 'admin';
+export const ADMIN_PASSWORD = '12991564197';
 // This will be the default number if none is configured in the admin panel
 export const WHATSAPP_NUMBER = '5512981371613';
 
-export const DOG_DATA: Dog[] = [
+export const INITIAL_DOG_DATA: Dog[] = [
   {
     id: 1,
     name: 'Max',
