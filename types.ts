@@ -22,4 +22,6 @@ export interface ScheduledMessage {
 
 export interface Settings {
   whatsappNumber: string;
+  messagingApiUrl?: string;
+  messagingApiToken?: string;
 }

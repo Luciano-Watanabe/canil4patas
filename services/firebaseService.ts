@@ -65,14 +65,24 @@ const settingsDocRef = doc(db, "settings", "config");
 export const getSettings = async (): Promise<Settings> => {
     const docSnap = await getDoc(settingsDocRef);
     if (docSnap.exists()) {
-        return docSnap.data() as Settings;
+        const data = docSnap.data();
+        // Garante que os campos não sejam nulos/undefined se já existir um doc
+        return {
+            whatsappNumber: data.whatsappNumber || '',
+            messagingApiUrl: data.messagingApiUrl || 'http://portal.masterdaweb.net:8081/chat/send/text',
+            messagingApiToken: data.messagingApiToken || '12C184450FCF4C9B_CA',
+        };
     } else {
-        // Return a default value if settings don't exist
-        return { whatsappNumber: '5511912345678' };
+        // Retorna valores padrão se as configurações não existirem
+        return { 
+            whatsappNumber: '5511912345678',
+            messagingApiUrl: 'http://portal.masterdaweb.net:8081/chat/send/text',
+            messagingApiToken: '12C184450FCF4C9B_CA' 
+        };
     }
 };
 
 export const updateSettings = async (settingsData: Settings) => {
-    // Use setDoc with merge to create or update the document
+    // Usa setDoc com merge para criar ou atualizar o documento
     return await setDoc(settingsDocRef, settingsData, { merge: true });
 };
